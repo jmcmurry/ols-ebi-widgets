@@ -1,0 +1,274 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>
+        PLATO Select2 example
+    </title>
+
+    <script type="text/javascript" src="../docs/vendor/js/jquery.min.js"></script>
+    <script type="text/javascript" src="../dist/js/select2.full.js"></script>
+    <script type="text/javascript" src="../docs/vendor/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../docs/vendor/js/prettify.min.js"></script>
+
+    <link href="../docs/vendor/css/bootstrap.min.css" type="text/css" rel="stylesheet"/>
+    <link href="../dist/css/select2.min.css" type="text/css" rel="stylesheet"/>
+
+    <link href="../docs/vendor/css/font-awesome.min.css" type="text/css" rel="stylesheet"/>
+    <link href="../docs/vendor/css/prettify.css" type="text/css" rel="stylesheet"/>
+
+    <style type="text/css">
+        body {
+            font-size: 16px;
+        }
+
+        footer {
+            background-color: #eee;
+            margin-top: 1em;
+            padding: 1em;
+            text-align: center;
+        }
+
+        .navbar-inverse .navbar-brand {
+            color: #fff;
+        }
+    </style>
+
+</head>
+
+<style type="text/css">
+    .img-flag {
+        height: 15px;
+        width: 18px;
+    }
+</style>
+
+<div class="container">
+
+    <section id="data-ajax" class="row">
+        <div class="col-md-12">
+            <h1>OLS example</h1>
+
+            <p>
+                <select class="js-example-data-ajax form-control">
+                </select>
+            </p>
+        </div>
+    </section>
+</div>
+
+
+<script type="text/javascript">
+    var $states = $(".js-source-states");
+    var statesOptions = $states.html();
+    $states.remove();
+
+    $(".js-states").append(statesOptions);
+
+    $("[data-fill-from]").each(function () {
+        var $this = $(this);
+
+        var codeContainer = $this.data("fill-from");
+        var $container = $(codeContainer);
+
+        var code = $.trim($container.html());
+
+        $this.text(code);
+        $this.addClass("prettyprint linenums");
+    });
+
+    prettyPrint();
+
+    $.fn.select2.amd.require(
+            ["select2/core", "select2/utils", "select2/compat/matcher"],
+            function (Select2, Utils, oldMatcher) {
+                var $basicSingle = $(".js-example-basic-single");
+                var $basicMultiple = $(".js-example-basic-multiple");
+                var $limitMultiple = $(".js-example-basic-multiple-limit");
+
+                var $dataArray = $(".js-example-data-array");
+                var $dataArraySelected = $(".js-example-data-array-selected");
+
+                var data = [{id: 0, text: 'enhancement'}, {id: 1, text: 'bug'}, {id: 2, text: 'duplicate'}, {
+                    id: 3,
+                    text: 'invalid'
+                }, {id: 4, text: 'wontfix'}];
+
+                var $ajax = $(".js-example-data-ajax");
+
+                var $disabledResults = $(".js-example-disabled-results");
+
+                var $tags = $(".js-example-tags");
+
+                var $matcherStart = $('.js-example-matcher-start');
+
+                var $diacritics = $(".js-example-diacritics");
+                var $language = $(".js-example-language");
+
+                $basicSingle.select2();
+                $basicMultiple.select2();
+                $limitMultiple.select2({
+                    maximumSelectionLength: 2
+                });
+
+                function formatState(state) {
+                    if (!state.id) {
+                        return state.text;
+                    }
+                    var $state = $(
+                            '<span>' +
+                            '<img src="vendor/images/flags/' +
+                            state.element.value.toLowerCase() +
+                            '.png" class="img-flag" /> ' +
+                            state.text +
+                            '</span>'
+                    );
+                    return $state;
+                };
+
+                $(".js-example-templating").select2({
+                    templateResult: formatState,
+                    templateSelection: formatState
+                });
+
+                $dataArray.select2({
+                    data: data
+                });
+
+                $dataArraySelected.select2({
+                    data: data
+                });
+
+                function formatTermResult(termResult) {
+//                    if (termResult.loading) return termResult.text;
+
+                    var markup = '<div class="clearfix">' +
+//                            '<div class="col-sm-1">' +
+//                            '<img src="' + "efo.png" + '" style="max-width: 100%" />' +
+//                            '</div>' +
+                            '<div class="col-sm-10">' +
+                            '<div class="clearfix">' +
+                            '<div class="col-sm-6"> ' + termResult.label + '</div>' +
+                            '<div class="col-sm-6"> ' + termResult.id + '</div>' +
+//                            '<div class="col-sm-2"><i class="fa fa-star"></i> ' + 2 + '</div>' +
+                            '</div>';
+//
+//                    if (termResult.description) {
+//                        markup += '<div>' + termResult.description + '</div>';
+//                    }
+//
+//                    markup += '</div></div>';
+//                    var markup = '<div class="clearfix">' + termResult.label + '</div>';
+
+                    return markup;
+                }
+
+                function formatRepoSelection(termResult) {
+
+                    console.log("Term result");
+                    console.log(termResult);
+                    return termResult.label || repo.text;
+                }
+
+                $ajax.select2({
+                    ajax: {
+                        url: "http://localhost:8080/api/select",
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            console.log("Params");
+                            console.log(params);
+
+                            return {
+                                q: params.term, // search term
+                                page: params.page
+                            };
+                        },
+                        processResults: function (data, params) {
+                            // parse the results into the format expected by Select2
+                            // since we are using custom formatting functions we do not need to
+                            // alter the remote JSON data, except to indicate that infinite
+                            // scrolling can be used
+                            params.page = params.page || 1;
+
+                            console.log(data.response.docs);
+
+                            for (var i = 0; i < data.response.docs.length; i++) {
+                                var label = data.response.docs[i].short_form[0].replace(":", "_");
+                                data.response.docs[i].id = label;
+                            }
+
+                            return {
+                                results: data.response.docs,
+                                pagination: {
+                                    more: (params.page * 30) < data.response.docs.length
+                                }
+                            };
+                        },
+                        cache: true
+                    },
+                    escapeMarkup: function (markup) {
+                        return markup;
+                    },
+                    minimumInputLength: 1,
+                    templateResult: formatTermResult,
+                    templateSelection: formatRepoSelection
+                });
+
+                $(".js-example-disabled").select2();
+                $(".js-example-disabled-multi").select2();
+
+                $(".js-example-responsive").select2();
+
+                $disabledResults.select2();
+
+                $(".js-example-programmatic").select2();
+                $(".js-example-programmatic-multi").select2();
+
+//                $eventSelect.select2();
+
+                $tags.select2({
+                    tags: ['red', 'blue', 'green']
+                });
+
+                $(".js-example-tokenizer").select2({
+                    tags: true,
+                    tokenSeparators: [',', ' ']
+                });
+
+                function matchStart(term, text) {
+                    if (text.toUpperCase().indexOf(term.toUpperCase()) == 0) {
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                $matcherStart.select2({
+                    matcher: oldMatcher(matchStart)
+                });
+
+                $(".js-example-basic-hide-search").select2({
+                    minimumResultsForSearch: Infinity
+                });
+
+                $diacritics.select2();
+
+                $language.select2({
+                    language: "es"
+                });
+
+                $(".js-example-theme-single").select2({
+                    theme: "classic"
+                });
+
+                $(".js-example-theme-multiple").select2({
+                    theme: "classic"
+                });
+
+                $(".js-example-rtl").select2();
+            });
+</script>

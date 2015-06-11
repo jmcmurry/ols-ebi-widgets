@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+
+<head>
+  <link rel="stylesheet" href="../build/index.css" />
+  <script src="../build/ols-ebi-widgets.js"></script>
+  <script src="../build/ols-ebi-widgets.js"></script>
+  <script src="simpleSuggest.js"></script>
+</head>
+
+<body>
+  <h1>Simple suggest</h1>
+  <div id="mydiv"></div>
+  <script>
+    var mywidget = olswidget.suggest();
+    var theme = theme();
+    theme(mywidget, document.getElementById("mydiv"));
+//    console.log(tnt);
+  </script>
+</body>
