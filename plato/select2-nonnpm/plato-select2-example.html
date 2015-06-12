@@ -53,8 +53,9 @@
             <h1>OLS example</h1>
 
             <p>
-                <select class="js-example-data-ajax form-control">
-                </select>
+                <select class="js-example-data-ajax js-example-basic-multiple form-control" multiple="multiple"
+                        style="width: 75%"></select>
+                <!--<select class="js-example-basic-multiple js-states form-control" multiple="multiple"></select>-->
             </p>
         </div>
     </section>
@@ -62,6 +63,7 @@
 
 
 <script type="text/javascript">
+    console.log('You are running jQuery version: ' + $.fn.jquery);
     var $states = $(".js-source-states");
     var statesOptions = $states.html();
     $states.remove();
@@ -144,7 +146,6 @@
 
                 function formatTermResult(termResult) {
 //                    if (termResult.loading) return termResult.text;
-
                     var markup = '<div class="clearfix">' +
 //                            '<div class="col-sm-1">' +
 //                            '<img src="' + "efo.png" + '" style="max-width: 100%" />' +
@@ -152,6 +153,7 @@
                             '<div class="col-sm-10">' +
                             '<div class="clearfix">' +
                             '<div class="col-sm-6"> ' + termResult.label + '</div>' +
+                            '<div class="col-sm-6"> ' + termResult.matchedsynonym + '</div>' +
                             '<div class="col-sm-6"> ' + termResult.id + '</div>' +
 //                            '<div class="col-sm-2"><i class="fa fa-star"></i> ' + 2 + '</div>' +
                             '</div>';
@@ -175,7 +177,7 @@
 
                 $ajax.select2({
                     ajax: {
-                        url: "http://localhost:8080/api/select",
+                        url: "http://localhost:8080/api/suggestplus",
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
@@ -197,8 +199,26 @@
                             console.log(data.response.docs);
 
                             for (var i = 0; i < data.response.docs.length; i++) {
-                                var label = data.response.docs[i].short_form[0].replace(":", "_");
-                                data.response.docs[i].id = label;
+                                var id = data.response.docs[i].short_form[0].replace(":", "_");
+                                data.response.docs[i].id = id;
+
+                                if (data.response.docs[i].synonym == null) {
+                                    data.response.docs[i].matchedsynonym = "";
+//                                    console.log("data.response.docs[i]");
+//                                    console.log(data.response.docs[i]);
+                                }
+
+                                else {
+                                    console.log(i + "loop through synonyms " + params.term);
+                                    console.log(data.response.docs[i].synonym.length);
+
+                                    for (var j = 0; j < data.response.docs[i].synonym.length; j++) {
+                                        var syn = data.response.docs[i].synonym[j];
+                                        if (syn.indexOf(params.term) != -1) {
+                                            data.response.docs[i].matchedsynonym = syn;
+                                        }
+                                    }
+                                }
                             }
 
                             return {
