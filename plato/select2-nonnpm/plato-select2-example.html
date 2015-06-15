@@ -37,14 +37,21 @@
         }
     </style>
 
-</head>
+    <style type="text/css">
+        .matched-field {
+            height: 30px;
+            width: 50px;
+        }
+    </style>
 
-<style type="text/css">
-    .img-flag {
-        height: 15px;
-        width: 18px;
-    }
-</style>
+    <style type="text/css">
+        .term-id {
+            color: #778899;
+            font-size: small;
+        }
+    </style>
+
+</head>
 
 <div class="container">
 
@@ -146,10 +153,9 @@
                 function formatTermResult(termResult) {
 //                    if (termResult.loading) return termResult.text;
                     var markup = '<div class="clearfix">' +
-                            '<div class="col-sm-6"> ' + termResult.matchedText + '</div>' +
-//                    "\t(" + termResult.matchedField + ": " + termResult.id + ")" + '</div>' +
-                            '<div class="col-sm-1">' +
-                            '<img src="' + "label.png" + '" style="max-width: 100%" />' +
+                            '<div class="col-sm-5"> ' + termResult.preContext + '<b>' + termResult.matchedText + '</b>' + termResult.postContext + '</div>' +
+//                            '<div class="col-sm-2"> ' + '<img src="' + termResult.matchedField + '.png" class="matched-field"/>' +'</div>' +
+                            '<div class="term-id col-sm-5"> ' + termResult.matchedField + ":  " + termResult.id + '</div>' +
                             '</div>';
                     return markup;
                 }
@@ -189,29 +195,37 @@
 
                             for (var i = 0; i < response.length; i++) {
 
-                                var matchedText = "";
+                                var matchedEntry = "";
                                 var matchedField = null;
 
                                 var id = response[i].short_form[0].replace(":", "_");
                                 response[i].id = id;
 
+                                var indexMatchStart = -1;
+
                                 //if match is in label
-                                if (response[i].label.toLowerCase().indexOf(lowercaseQuery) != -1) {
-                                    matchedText = response[i].label;
+
+                                indexMatchStart = response[i].label.toLowerCase().indexOf(lowercaseQuery);
+
+                                if (indexMatchStart != -1) {
+                                    matchedEntry = response[i].label;
                                     matchedField = "label";
 
-                                    console.log(matchedField + "," + matchedText);
+                                    console.log(matchedField + "," + matchedEntry);
                                 }
 
                                 //if match is in synonym
                                 else if (data.response.docs[i].synonym != null) {
                                     for (var j = 0; j < data.response.docs[i].synonym.length; j++) {
                                         var syn = data.response.docs[i].synonym[j];
-                                        if (syn.toLowerCase().indexOf(lowercaseQuery) != -1) {
-                                            matchedText = syn;
+
+                                        indexMatchStart = syn.toLowerCase().indexOf(lowercaseQuery);
+
+                                        if (indexMatchStart != -1) {
+                                            matchedEntry = syn;
                                             matchedField = "synonym";
 
-                                            console.log(matchedField + "," + matchedText);
+                                            console.log(matchedField + "," + matchedEntry);
                                         }
                                     }
                                 }
@@ -219,25 +233,37 @@
                                 //if match is in description
                                 if (matchedField == null)
                                     if (response[i].description != null) {
-                                        if (response[i].description.toLowerCase().indexOf(lowercaseQuery) != -1) {
-                                            matchedText = response[i].description;
+                                        indexMatchStart = response[i].description.toLowerCase().indexOf(lowercaseQuery);
+                                        if (response != -1) {
+                                            matchedEntry = response[i].description;
                                             matchedField = "description";
 
-                                            console.log(matchedField + "," + matchedText);
+                                            console.log(matchedField + "," + matchedEntry);
                                         }
                                         else {
-                                            matchedText = response[i].label;
+                                            matchedEntry = response[i].label;
                                             matchedField = "other";
                                         }
                                     }
 
                                 if (matchedField == null) {
-                                    matchedText = response[i].label;
+                                    matchedEntry = response[i].label;
                                     matchedField = "partial";
                                 }
 
-                                data.response.docs[i].matchedText = matchedText;
-                                data.response.docs[i].matchedField = matchedField;
+                                if (indexMatchStart != -1) {
+                                    var indexMatchEnd = indexMatchStart + lowercaseQuery.length;
+                                    data.response.docs[i].preContext = matchedEntry.substring(0, indexMatchStart);
+                                    data.response.docs[i].matchedText = matchedEntry.substring(indexMatchStart, indexMatchEnd);
+                                    data.response.docs[i].postContext = matchedEntry.substring(indexMatchEnd);
+                                } else {
+                                    data.response.docs[i].preContext = matchedEntry;
+                                    data.response.docs[i].matchedText = "";
+                                    data.response.docs[i].postContext = "";
+                                }
+                                if (matchedField == ("synonym")) {
+                                    data.response.docs[i].matchedField = "synonym for \"" + data.response.docs[i].label + "\"";
+                                } else data.response.docs[i].matchedField = matchedField;
 
                             }
 
