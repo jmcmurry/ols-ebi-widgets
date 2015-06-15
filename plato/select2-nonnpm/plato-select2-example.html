@@ -54,7 +54,7 @@
 
             <p>
                 <select class="js-example-data-ajax js-example-basic-multiple form-control" multiple="multiple"
-                        style="width: 75%"></select>
+                        ></select>
                 <!--<select class="js-example-basic-multiple js-states form-control" multiple="multiple"></select>-->
             </p>
         </div>
@@ -63,7 +63,6 @@
 
 
 <script type="text/javascript">
-    console.log('You are running jQuery version: ' + $.fn.jquery);
     var $states = $(".js-source-states");
     var statesOptions = $states.html();
     $states.remove();
@@ -124,7 +123,7 @@
                             '<span>' +
                             '<img src="vendor/images/flags/' +
                             state.element.value.toLowerCase() +
-                            '.png" class="img-flag" /> ' +
+                            '." class="img-flag" /> ' +
                             state.text +
                             '</span>'
                     );
@@ -147,31 +146,18 @@
                 function formatTermResult(termResult) {
 //                    if (termResult.loading) return termResult.text;
                     var markup = '<div class="clearfix">' +
-//                            '<div class="col-sm-1">' +
-//                            '<img src="' + "efo.png" + '" style="max-width: 100%" />' +
-//                            '</div>' +
-                            '<div class="col-sm-10">' +
-                            '<div class="clearfix">' +
-                            '<div class="col-sm-6"> ' + termResult.label + '</div>' +
-                            '<div class="col-sm-6"> ' + termResult.matchedsynonym + '</div>' +
-                            '<div class="col-sm-6"> ' + termResult.id + '</div>' +
-//                            '<div class="col-sm-2"><i class="fa fa-star"></i> ' + 2 + '</div>' +
+                            '<div class="col-sm-6"> ' + termResult.matchedText + '</div>' +
+//                    "\t(" + termResult.matchedField + ": " + termResult.id + ")" + '</div>' +
+                            '<div class="col-sm-1">' +
+                            '<img src="' + "label.png" + '" style="max-width: 100%" />' +
                             '</div>';
-//
-//                    if (termResult.description) {
-//                        markup += '<div>' + termResult.description + '</div>';
-//                    }
-//
-//                    markup += '</div></div>';
-//                    var markup = '<div class="clearfix">' + termResult.label + '</div>';
-
                     return markup;
                 }
 
                 function formatRepoSelection(termResult) {
 
-                    console.log("Term result");
-                    console.log(termResult);
+//                    console.log("Term result");
+//                    console.log(termResult);
                     return termResult.label || repo.text;
                 }
 
@@ -181,8 +167,8 @@
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
-                            console.log("Params");
-                            console.log(params);
+//                            console.log("Params");
+//                            console.log(params);
 
                             return {
                                 q: params.term, // search term
@@ -196,29 +182,63 @@
                             // scrolling can be used
                             params.page = params.page || 1;
 
-                            console.log(data.response.docs);
+                            var lowercaseQuery = params.term.toLowerCase();
 
-                            for (var i = 0; i < data.response.docs.length; i++) {
-                                var id = data.response.docs[i].short_form[0].replace(":", "_");
-                                data.response.docs[i].id = id;
+                            var response = data.response.docs;
+                            console.log(response);
 
-                                if (data.response.docs[i].synonym == null) {
-                                    data.response.docs[i].matchedsynonym = "";
-//                                    console.log("data.response.docs[i]");
-//                                    console.log(data.response.docs[i]);
+                            for (var i = 0; i < response.length; i++) {
+
+                                var matchedText = "";
+                                var matchedField = null;
+
+                                var id = response[i].short_form[0].replace(":", "_");
+                                response[i].id = id;
+
+                                //if match is in label
+                                if (response[i].label.toLowerCase().indexOf(lowercaseQuery) != -1) {
+                                    matchedText = response[i].label;
+                                    matchedField = "label";
+
+                                    console.log(matchedField + "," + matchedText);
                                 }
 
-                                else {
-                                    console.log(i + "loop through synonyms " + params.term);
-                                    console.log(data.response.docs[i].synonym.length);
-
+                                //if match is in synonym
+                                else if (data.response.docs[i].synonym != null) {
                                     for (var j = 0; j < data.response.docs[i].synonym.length; j++) {
                                         var syn = data.response.docs[i].synonym[j];
-                                        if (syn.indexOf(params.term) != -1) {
-                                            data.response.docs[i].matchedsynonym = syn;
+                                        if (syn.toLowerCase().indexOf(lowercaseQuery) != -1) {
+                                            matchedText = syn;
+                                            matchedField = "synonym";
+
+                                            console.log(matchedField + "," + matchedText);
                                         }
                                     }
                                 }
+
+                                //if match is in description
+                                if (matchedField == null)
+                                    if (response[i].description != null) {
+                                        if (response[i].description.toLowerCase().indexOf(lowercaseQuery) != -1) {
+                                            matchedText = response[i].description;
+                                            matchedField = "description";
+
+                                            console.log(matchedField + "," + matchedText);
+                                        }
+                                        else {
+                                            matchedText = response[i].label;
+                                            matchedField = "other";
+                                        }
+                                    }
+
+                                if (matchedField == null) {
+                                    matchedText = response[i].label;
+                                    matchedField = "partial";
+                                }
+
+                                data.response.docs[i].matchedText = matchedText;
+                                data.response.docs[i].matchedField = matchedField;
+
                             }
 
                             return {
