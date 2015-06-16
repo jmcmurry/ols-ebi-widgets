@@ -39,15 +39,53 @@
 
     <style type="text/css">
         .matched-field {
-            height: 30px;
-            width: 50px;
+            height: 20px;
+            width: 20px;
         }
     </style>
 
     <style type="text/css">
         .term-id {
-            color: #778899;
+            color: darkgrey;
             font-size: small;
+
+        }
+    </style>
+
+    <style type="text/css">
+        .term-id-badge {
+            color: #ffffff;
+            font-size: small;
+            line-height: 10px;
+            padding: 5px;
+            /*vertical-align:middle;*/
+        }
+    </style>
+
+    <style type="text/css">
+        .term-match {
+            color: #808080;
+            font-size: small;
+            display: inline-block;
+        }
+    </style>
+
+    <style type="text/css">
+        .term-soure-ref {
+            background-color: darkgrey;
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+            display: inline-block;
+        }
+    </style>
+
+    <style type="text/css">
+        .term-id-numeric-fragment {
+            background-color: lightgray;
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            display: inline-block;
+            /*vertical-align:middle;*/
         }
     </style>
 
@@ -151,36 +189,47 @@
                 });
 
                 function formatTermResult(termResult) {
-//                    if (termResult.loading) return termResult.text;
+
+                    if (termResult.loading) return "Searching...";
+
                     var markup = '<div class="clearfix">' +
+
                             '<div class="col-sm-5"> ' + termResult.preContext + '<b>' + termResult.matchedText + '</b>' + termResult.postContext + '</div>' +
-//                            '<div class="col-sm-2"> ' + '<img src="' + termResult.matchedField + '.png" class="matched-field"/>' +'</div>' +
-                            '<div class="term-id col-sm-5"> ' + termResult.matchedField + ":  " + termResult.id + '</div>' +
+
+                            '<div class="col-sm-5" title="Matched field is"> ' + '<img src="' + termResult.matchedField + '.png" class="matched-field"/>    ' +
+                            '<div class="term-id-badge term-soure-ref"> ' + termResult.termSourceRef + '</div>' +
+                            '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.termIdNumericFragment + '</div>' +
+                            '<div class="term-match"> ' + termResult.nonLabelMatchText + '</div>' +
+                            '</div>' +
+
                             '</div>';
                     return markup;
                 }
 
-                function formatRepoSelection(termResult) {
+                function formatTermSelection(termResult, container, escapeMarkup) {
 
-//                    console.log("Term result");
-//                    console.log(termResult);
-                    return termResult.label || repo.text;
+                    var dataElement = termResult ? (termResult[0] || termResult) : null;
+
+
+                    console.log(termResult);
+
+                    return dataElement ? (dataElement.label + '<div class="term-id">' + termResult.id + '</div>') : blankElement;
                 }
 
                 $ajax.select2({
+                    placeholder: "Search for an ontology term",
                     ajax: {
                         url: "http://localhost:8080/api/suggestplus",
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
-//                            console.log("Params");
-//                            console.log(params);
 
                             return {
                                 q: params.term, // search term
                                 page: params.page
                             };
                         },
+
                         processResults: function (data, params) {
                             // parse the results into the format expected by Select2
                             // since we are using custom formatting functions we do not need to
@@ -199,23 +248,34 @@
                                 var matchedField = null;
 
                                 var id = response[i].short_form[0].replace(":", "_");
-                                response[i].id = id;
 
                                 var indexMatchStart = -1;
+                                var indexMatchEnd = -1;
 
                                 //if match is in label
 
                                 indexMatchStart = response[i].label.toLowerCase().indexOf(lowercaseQuery);
-
                                 if (indexMatchStart != -1) {
                                     matchedEntry = response[i].label;
                                     matchedField = "label";
+                                    indexMatchEnd = indexMatchStart + lowercaseQuery.length;
 
-                                    console.log(matchedField + "," + matchedEntry);
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "")
+
+                                }
+
+
+                                // if match in ID
+                                if (matchedField == null && id.toLowerCase().indexOf(lowercaseQuery) != -1) {
+                                    matchedEntry = response[i].label;
+                                    matchedField = "id";
+
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "")
                                 }
 
                                 //if match is in synonym
-                                else if (data.response.docs[i].synonym != null) {
+                                if (matchedField == null && data.response.docs[i].synonym != null) {
+
                                     for (var j = 0; j < data.response.docs[i].synonym.length; j++) {
                                         var syn = data.response.docs[i].synonym[j];
 
@@ -225,52 +285,46 @@
                                             matchedEntry = syn;
                                             matchedField = "synonym";
 
-                                            console.log(matchedField + "," + matchedEntry);
+                                            indexMatchEnd = indexMatchStart + lowercaseQuery.length;
+                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Synonym of");
+                                            break;
                                         }
                                     }
                                 }
 
                                 //if match is in description
-                                if (matchedField == null)
-                                    if (response[i].description != null) {
-                                        indexMatchStart = response[i].description.toLowerCase().indexOf(lowercaseQuery);
-                                        if (response != -1) {
-                                            matchedEntry = response[i].description;
+                                if (matchedField == null && data.response.docs[i].description != null) {
+
+                                    for (var j = 0; j < data.response.docs[i].description.length; j++) {
+                                        var descr = data.response.docs[i].description[j];
+
+                                        indexMatchStart = descr.toLowerCase().indexOf(lowercaseQuery);
+
+                                        if (indexMatchStart != -1) {
+                                            matchedEntry = descr;
                                             matchedField = "description";
 
-                                            console.log(matchedField + "," + matchedEntry);
-                                        }
-                                        else {
-                                            matchedEntry = response[i].label;
-                                            matchedField = "other";
+                                            indexMatchEnd = indexMatchStart + lowercaseQuery.length;
+                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Description of");
+                                            break;
                                         }
                                     }
+                                }
 
-                                if (matchedField == null) {
+                                // if query string not an exact match to field (tokenization, spelling etc.)
+                                if (matchedField == null && response[i] != null) {
                                     matchedEntry = response[i].label;
                                     matchedField = "partial";
-                                }
 
-                                if (indexMatchStart != -1) {
-                                    var indexMatchEnd = indexMatchStart + lowercaseQuery.length;
-                                    data.response.docs[i].preContext = matchedEntry.substring(0, indexMatchStart);
-                                    data.response.docs[i].matchedText = matchedEntry.substring(indexMatchStart, indexMatchEnd);
-                                    data.response.docs[i].postContext = matchedEntry.substring(indexMatchEnd);
-                                } else {
-                                    data.response.docs[i].preContext = matchedEntry;
-                                    data.response.docs[i].matchedText = "";
-                                    data.response.docs[i].postContext = "";
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Partial match to")
                                 }
-                                if (matchedField == ("synonym")) {
-                                    data.response.docs[i].matchedField = "synonym for \"" + data.response.docs[i].label + "\"";
-                                } else data.response.docs[i].matchedField = matchedField;
-
                             }
 
                             return {
-                                results: data.response.docs,
+                                results: response,
+                                // 16 June 2015, note that there's a known select2 bug in pagination: https://github.com/select2/select2/issues/3088
                                 pagination: {
-                                    more: (params.page * 30) < data.response.docs.length
+                                    more: (params.page * 30) < response.length
                                 }
                             };
                         },
@@ -278,11 +332,13 @@
                     },
                     escapeMarkup: function (markup) {
                         return markup;
-                    },
+                    }
+                    ,
                     minimumInputLength: 1,
                     templateResult: formatTermResult,
-                    templateSelection: formatRepoSelection
+                    templateSelection: formatTermSelection
                 });
+
 
                 $(".js-example-disabled").select2();
                 $(".js-example-disabled-multi").select2();
@@ -294,7 +350,7 @@
                 $(".js-example-programmatic").select2();
                 $(".js-example-programmatic-multi").select2();
 
-//                $eventSelect.select2();
+                //                $eventSelect.select2();
 
                 $tags.select2({
                     tags: ['red', 'blue', 'green']
@@ -306,11 +362,26 @@
                 });
 
                 function matchStart(term, text) {
-                    if (text.toUpperCase().indexOf(term.toUpperCase()) == 0) {
-                        return true;
-                    }
+                    return text.toUpperCase().indexOf(term.toUpperCase()) == 0;
+                }
 
-                    return false;
+                function processSingleResult(id, label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, nonLabelMatchType) {
+                    var processedResult = {
+                        id: id,
+                        label: label,
+                        termSourceRef: id.substr(0, id.indexOf("_")),
+                        termIdNumericFragment: id.substr(id.indexOf("_") + 1),
+                        matchedField: matchedField,
+                        preContext: indexMatchStart != -1 ? matchedEntry.substring(0, indexMatchStart) : matchedEntry,
+                        matchedText: indexMatchStart != -1 ? matchedEntry.substring(indexMatchStart, indexMatchEnd) : "",
+                        postContext: indexMatchStart != -1 ? matchedEntry.substring(indexMatchEnd) : "",
+                        matchType: nonLabelMatchType,
+                        nonLabelMatchType: nonLabelMatchType,
+                        nonLabelMatchText: nonLabelMatchType == "" ? "" : "\"" + label + "\""
+                    };
+
+                    console.log(processedResult);
+                    return processedResult;
                 }
 
                 $matcherStart.select2({
@@ -336,5 +407,6 @@
                 });
 
                 $(".js-example-rtl").select2();
-            });
+            })
+    ;
 </script>
