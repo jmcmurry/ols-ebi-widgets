@@ -1,1 +1,2 @@
-language: node_js
+#language: node_js
+#hope this lets me opt out of travis notifications because I don't intend to follow up with the devbridge version
