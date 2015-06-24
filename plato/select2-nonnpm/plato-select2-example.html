@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>
-        PLATO Select2 example
+        PLATO Select2 Annotation example
     </title>
 
     <script type="text/javascript" src="vendor/js/jquery.min.js"></script>
@@ -38,17 +38,6 @@
     </style>
 
     <style type="text/css">
-        .max-lines {
-            text-overflow: ellipsis;
-            word-wrap: break-word;
-            overflow: hidden;
-            max-height: 4.5em;
-            /*line-height: 1.5em;*/
-            line-height: 100%;
-        }
-    </style>
-
-    <style type="text/css">
         .term-id {
             color: darkgrey;
             font-size: small;
@@ -65,14 +54,6 @@
     </style>
 
     <style type="text/css">
-        .term-match {
-            color: #808080;
-            font-size: small;
-            display: inline-block;
-        }
-    </style>
-
-    <style type="text/css">
         .term-soure-ref {
             background-color: darkgrey;
             border-top-left-radius: 3px;
@@ -81,17 +62,6 @@
         }
     </style>
 
-    <style type="text/css">
-        .hover-text {
-            color: lightgrey;
-            font-size: x-small;
-            font-style: italic;
-            text-align: left;
-            max-height: 50px;
-            display: inline-block;
-            /*margin-left: 50px;*/
-        }
-    </style>
 
     <style type="text/css">
         .term-id-numeric-fragment {
@@ -103,23 +73,39 @@
         }
     </style>
 
+    <style type="text/css">
+        .extra-info {
+            color: lightgrey;
+            font-size: x-small;
+            font-style: italic;
+            text-align: left;
+            max-height: 50px;
+            display: inline-block;
+            /*margin-left: 50px;*/
+        }
+    </style>
+
 </head>
 
 <div class="container">
 
     <section id="data-ajax" class="row">
         <div class="col-md-12">
-            <h1>OLS example</h1>
+            <h1>Annotation use case</h1>
 
-            <p>
+
+            <div class="col-md-12">
                 <select class="js-example-data-ajax js-example-basic-multiple form-control" multiple="multiple"
                         style="width: 100%"></select>
-            </p>
+            </div>
 
-            <!--<p>-->
-            <!--<select class="js-example-data-ajax js-example-basic-multiple form-control" multiple="multiple"-->
-            <!--style="width: 50%"></select>-->
-            <!--</p>-->
+            <h1>-------------------</h1>
+
+            <h1>Search use case</h1>
+
+            <div class="col-md-12">
+                <select class="js-example-data-ajax js-example-basic-single form-control" style="width: 100%"></select>
+            </div>
         </div>
     </section>
 </div>
@@ -165,37 +151,14 @@
 
                 var $disabledResults = $(".js-example-disabled-results");
 
-                var $tags = $(".js-example-tags");
-
                 var $matcherStart = $('.js-example-matcher-start');
 
-                var $diacritics = $(".js-example-diacritics");
                 var $language = $(".js-example-language");
 
                 $basicSingle.select2();
                 $basicMultiple.select2();
                 $limitMultiple.select2({
                     maximumSelectionLength: 2
-                });
-
-                function formatState(state) {
-                    if (!state.id) {
-                        return state.text;
-                    }
-                    var $state = $(
-                            '<span>' +
-                            '<img src="vendor/images/flags/' +
-                            state.element.value.toLowerCase() +
-                            '." class="img-flag" /> ' +
-                            state.text +
-                            '</span>'
-                    );
-                    return $state;
-                };
-
-                $(".js-example-templating").select2({
-                    templateResult: formatState,
-                    templateSelection: formatState
                 });
 
                 $dataArray.select2({
@@ -208,18 +171,42 @@
 
                 function formatTermResult(termResult) {
 
+//                    var markup = '<div class="clearfix">' +
+
+                    console.log(termResult);
+
+                    if (typeof termResult.termSourceRef == 'undefined') {
+
+                        var markup = '<div class="clearfix">' +
+
+                                '<div class="col-sm-2"> ' +
+//                                '<div class="term-id-badge term-soure-ref"> ' + termResult.termSourceRef + '</div>' +
+//                                '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.termIdNumericFragment + '</div>' + '<br>' +
+//                                '<div class="extra-info"> ' + termResult.ontologyImportName + '</div>' +
+                                '</div>' +
+
+                                '<div class="col-sm-8 max-lines"> ' + "all results for " + '<b>'  + termResult.id + '</b>'+ "<br>" +
+
+//                                '<div class="extra-info"> ' + termResult.matchedField + "   " + termResult.nonLabelMatchText + '</div>' +
+                                '</div>';
+
+                        return markup;
+//                        return ('<div class="clearfix">' +  + '</div>');
+                    }
+
                     if (termResult.loading) return "Searching...";
 
                     var markup = '<div class="clearfix">' +
 
                             '<div class="col-sm-2"> ' +
                             '<div class="term-id-badge term-soure-ref"> ' + termResult.termSourceRef + '</div>' +
-                            '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.termIdNumericFragment + '</div>' +
+                            '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.termIdNumericFragment + '</div>' + '<br>' +
+                            '<div class="extra-info"> ' + termResult.ontologyImportName + '</div>' +
                             '</div>' +
 
                             '<div class="col-sm-8 max-lines"> ' + termResult.preContext + '<b>' + termResult.matchedText + '</b>' + termResult.postContext + "<br>" +
 
-                            '<div class="hover-text"> ' + termResult.matchedField + "   " + termResult.nonLabelMatchText + '</div>' +
+                            '<div class="extra-info"> ' + termResult.matchedField + "   " + termResult.nonLabelMatchText + '</div>' +
                             '</div>';
 
                     return markup;
@@ -228,13 +215,14 @@
                 function formatTermSelection(termResult) {
 
                     var dataElement = termResult ? (termResult[0] || termResult) : null;
-                    return dataElement ? (dataElement.label + '<div class="term-id">' + termResult.id + '</div>') : null;
+                    return dataElement ? ('<div class = "term-selection">' + dataElement.label + '<div class="term-id">' + termResult.id + '</div>' + '</div>') : null;
                 }
 
                 $ajax.select2({
                     placeholder: "Search for an ontology term",
+                    tags: true,
                     ajax: {
-                        url: "http://localhost:8080/api/suggestplus",
+                        url: "http://localhost:8080/api/termselect",
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
@@ -263,6 +251,7 @@
                                 var matchedField = null;
 
                                 var id = response[i].short_form[0].replace(":", "_");
+                                var ontologyImportName = response[i].ontology_name == id.substring(0, id.indexOf("_")) ? "" : response[i].ontology_name + " import";
 
                                 var indexMatchStart = -1;
                                 var indexMatchEnd = -1;
@@ -275,7 +264,7 @@
                                     matchedField = "label";
                                     indexMatchEnd = indexMatchStart + lowercaseQuery.length;
 
-                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "")
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "", ontologyImportName)
 
                                 }
 
@@ -284,7 +273,7 @@
                                     matchedEntry = response[i].label;
                                     matchedField = "id";
 
-                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "")
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "", ontologyImportName)
                                 }
 
                                 //if match is in synonym
@@ -300,7 +289,7 @@
                                             matchedField = "synonym for";
 
                                             indexMatchEnd = indexMatchStart + lowercaseQuery.length;
-                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Synonym of");
+                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Synonym of", ontologyImportName);
                                             break;
                                         }
                                     }
@@ -329,7 +318,7 @@
 
                                             matchedField = "from description of";
 
-                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Description of");
+                                            response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Description of", ontologyImportName);
                                             break;
                                         }
                                     }
@@ -340,9 +329,10 @@
                                     matchedEntry = response[i].label;
                                     matchedField = "partial match";
 
-                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Partial match to")
+                                    response[i] = processSingleResult(id, response[i].label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, "Partial match to", ontologyImportName)
                                 }
                             }
+
 
                             return {
                                 results: response,
@@ -361,6 +351,11 @@
                     minimumInputLength: 1,
                     templateResult: formatTermResult,
                     templateSelection: formatTermSelection
+//                    language: {
+//                        noResults: function() {
+//                            return "<a href='http://google.com'>Add</a>";
+//                        }
+//                    }
                 });
 
 
@@ -376,19 +371,21 @@
 
 //                                $eventSelect.select2();
 
-                $tags.select2({
-                    tags: ['red', 'blue', 'green']
-                });
+//                $tags.select2({
+//                    tags: ['red', 'blue', 'green']
+//                });
 
                 $(".js-example-tokenizer").select2({
                     tags: true,
                     tokenSeparators: [',', ' ']
                 });
 
+
                 function matchStart(term, text) {
                     return text.toUpperCase().indexOf(term.toUpperCase()) == 0;
                 }
 
+                //2015-06 Chrome doesn't support the hidden text + ellipsis css yet, moreover centring around the matched text is needed even if css does eventually work
                 function trimToNeighboringText(haystack, tokenStartIndex, tokenEndIndex, numWords, delim) {
 
                     // number of delimiter occurrences to look for, this assumes the same on both sides
@@ -454,9 +451,11 @@
                     return j;
                 }
 
-                function processSingleResult(id, label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, nonLabelMatchType) {
+                function processSingleResult(id, label, matchedField, matchedEntry, indexMatchStart, indexMatchEnd, nonLabelMatchType, ontologyImportName) {
+
                     var processedResult = {
                         id: id,
+                        ontologyImportName: ontologyImportName,
                         label: label,
                         termSourceRef: id.substr(0, id.indexOf("_")),
                         termIdNumericFragment: id.substr(id.indexOf("_") + 1),
