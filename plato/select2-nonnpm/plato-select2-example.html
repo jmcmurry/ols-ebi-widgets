@@ -88,30 +88,71 @@
 </head>
 
 <div class="container">
-
     <section id="data-ajax" class="row">
         <div class="col-md-12">
             <h1>Annotation use case</h1>
 
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox"> Allow free-text tags
+                </label>
+            </div>
+
+            <div class="radio">
+                <label>
+                    <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1" checked>
+                    Annotate using labels only (even if search matches synonym)
+                </label>
+            </div>
+
+            <div class="radio">
+                <label>
+                    <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2">
+                    Annotate using labels or synonyms (whichever matches search term)
+                </label>
+            </div>
 
             <div class="col-md-12">
                 <select class="js-example-data-ajax js-example-basic-multiple form-control" multiple="multiple"
                         style="width: 100%"></select>
             </div>
 
-            <h1>-------------------</h1>
-
-            <h1>Search use case</h1>
-
-            <div class="col-md-12">
-                <select class="js-example-data-ajax js-example-basic-single form-control" style="width: 100%"></select>
-            </div>
         </div>
     </section>
 </div>
 
 
 <script type="text/javascript">
+
+    freetext = false;
+
+    $('#optionsRadios1').on('click', function (e) {
+
+        labelsOnly = true;
+        console.log(labelsOnly + " labelsonly")
+
+    });
+
+    $('#optionsRadios2').on('click', function (e) {
+
+        labelsOnly = false;
+        console.log(labelsOnly + " labelsonly")
+
+
+    });
+
+    //    $(document).ready(function(){
+    $('input[type="checkbox"]').click(function () {
+        if ($(this).prop("checked") == true) {
+            freetext = true;
+        }
+        else if ($(this).prop("checked") == false) {
+            freetext = false;
+        }
+    });
+    //    });
+
+
     var $states = $(".js-source-states");
     var statesOptions = $states.html();
     $states.remove();
@@ -139,21 +180,21 @@
                 var $basicMultiple = $(".js-example-basic-multiple");
                 var $limitMultiple = $(".js-example-basic-multiple-limit");
 
-                var $dataArray = $(".js-example-data-array");
-                var $dataArraySelected = $(".js-example-data-array-selected");
+//                var $dataArray = $(".js-example-data-array");
+//                var $dataArraySelected = $(".js-example-data-array-selected");
 
-                var data = [{id: 0, text: 'enhancement'}, {id: 1, text: 'bug'}, {id: 2, text: 'duplicate'}, {
-                    id: 3,
-                    text: 'invalid'
-                }, {id: 4, text: 'wontfix'}];
+//                var data = [{id: 0, text: 'enhancement'}, {id: 1, text: 'bug'}, {id: 2, text: 'duplicate'}, {
+//                    id: 3,
+//                    text: 'invalid'
+//                }, {id: 4, text: 'wontfix'}];
 
                 var $ajax = $(".js-example-data-ajax");
 
-                var $disabledResults = $(".js-example-disabled-results");
+//                var $disabledResults = $(".js-example-disabled-results");
 
                 var $matcherStart = $('.js-example-matcher-start');
 
-                var $language = $(".js-example-language");
+//                var $language = $(".js-example-language");
 
                 $basicSingle.select2();
                 $basicMultiple.select2();
@@ -161,13 +202,13 @@
                     maximumSelectionLength: 2
                 });
 
-                $dataArray.select2({
-                    data: data
-                });
-
-                $dataArraySelected.select2({
-                    data: data
-                });
+//                $dataArray.select2({
+//                    data: data
+//                });
+//
+//                $dataArraySelected.select2({
+//                    data: data
+//                });
 
                 function formatTermResult(termResult) {
 
@@ -175,17 +216,17 @@
 
                     console.log(termResult);
 
-                    if (typeof termResult.termSourceRef == 'undefined') {
+                    if (freetext && typeof termResult.termSourceRef == 'undefined') {
 
                         var markup = '<div class="clearfix">' +
 
                                 '<div class="col-sm-2"> ' +
-//                                '<div class="term-id-badge term-soure-ref"> ' + termResult.termSourceRef + '</div>' +
-//                                '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.termIdNumericFragment + '</div>' + '<br>' +
+                                '<div class="term-id-badge term-soure-ref"> ' + "FreeText" + '</div>' +
+                                '<div class="term-id-badge term-id-numeric-fragment"> ' + termResult.id + '</div>' + '<br>' +
 //                                '<div class="extra-info"> ' + termResult.ontologyImportName + '</div>' +
                                 '</div>' +
 
-                                '<div class="col-sm-8 max-lines"> ' + "all results for " + '<b>'  + termResult.id + '</b>'+ "<br>" +
+                                '<div class="col-sm-8 max-lines"> ' + "free text tag: " + '<b>' + termResult.id + '</b>' + "<br>" +
 
 //                                '<div class="extra-info"> ' + termResult.matchedField + "   " + termResult.nonLabelMatchText + '</div>' +
                                 '</div>';
@@ -215,12 +256,21 @@
                 function formatTermSelection(termResult) {
 
                     var dataElement = termResult ? (termResult[0] || termResult) : null;
-                    return dataElement ? ('<div class = "term-selection">' + dataElement.label + '<div class="term-id">' + termResult.id + '</div>' + '</div>') : null;
+                    var label;
+                    var id;
+                    if (!!dataElement.label) {
+                        label = labelsOnly || !dataElement.matchedField.contains("synonym") ? dataElement.label : dataElement.matchedText;
+                        id = termResult.id;
+                    } else if (freetext) {
+                        label = termResult.text;
+                        id = "freetext:" + label;
+                    }
+                    return dataElement ? ('<div class = "term-selection">' + label + '<div class="term-id">' + id + '</div>' + '</div>') : null;
                 }
 
                 $ajax.select2({
                     placeholder: "Search for an ontology term",
-                    tags: true,
+                    tags: freetext,
                     ajax: {
                         url: "http://localhost:8080/api/termselect",
                         dataType: 'json',
@@ -364,7 +414,7 @@
 
                 $(".js-example-responsive").select2();
 
-                $disabledResults.select2();
+//                $disabledResults.select2();
 
                 $(".js-example-programmatic").select2();
                 $(".js-example-programmatic-multi").select2();
@@ -375,10 +425,10 @@
 //                    tags: ['red', 'blue', 'green']
 //                });
 
-                $(".js-example-tokenizer").select2({
-                    tags: true,
-                    tokenSeparators: [',', ' ']
-                });
+//                $(".js-example-tokenizer").select2({
+//                    tags: true,
+//                    tokenSeparators: [',', ' ']
+//                });
 
 
                 function matchStart(term, text) {
@@ -480,11 +530,11 @@
                     minimumResultsForSearch: Infinity
                 });
 
-                $diacritics.select2();
+//                $diacritics.select2();
 
-                $language.select2({
-                    language: "es"
-                });
+//                $language.select2({
+//                    language: "es"
+//                });
 
                 $(".js-example-theme-single").select2({
                     theme: "classic"
@@ -494,7 +544,7 @@
                     theme: "classic"
                 });
 
-                $(".js-example-rtl").select2();
+//                $(".js-example-rtl").select2();
             })
     ;
 </script>
